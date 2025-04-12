@@ -2,29 +2,23 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-	"rest-project/internal/delivery"
-	"rest-project/internal/repository"
-	"rest-project/internal/services"
+	"rest-project/internal/auth"
+	"rest-project/internal/middleware"
 )
 
-func SetupRoutes(r *gin.Engine, db *gorm.DB) {
-	// Инициализация репозитория
-	studentRepo := repository.NewStudentRepository(db)
-
-	// Инициализация сервиса
-	studentService := service.NewStudentService(studentRepo)
-
-	// Инициализация обработчика
-	studentHandler := delivery.NewStudentHandler(studentService)
+func SetupRoutes(r *gin.Engine) {
 
 	// Роуты
-	students := r.Group("api/v1/students")
+	students := r.Group("api/v1/auth")
 	{
-		students.GET("/", studentHandler.GetAllStudents)
-		students.POST("/", studentHandler.CreateStudent)
-		students.GET("/:id", studentHandler.GetStudent)
-		students.PUT("/:id", studentHandler.UpdateStudent)
-		students.DELETE("/:id", studentHandler.DeleteStudent)
+		students.POST("/login", auth.Login)
+		students.POST("/register", auth.Register)
 	}
+
+	protected := r.Group("api/v1")
+	protected.Use(middleware.AuthRequired())
+	{
+		protected.GET("/me", auth.Me) // Защищённый эндпоинт
+	}
+
 }

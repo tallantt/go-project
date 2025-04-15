@@ -6,3 +6,4 @@ CREATE TABLE cars
     year TEXT NOT NULL UNIQUE,
     color TEXT NOT NULL UNIQUE
 );
+

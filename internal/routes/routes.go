@@ -3,22 +3,40 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"rest-project/internal/auth"
+	"rest-project/internal/db"
+	"rest-project/internal/delivery"
 	"rest-project/internal/middleware"
+	"rest-project/internal/repository"
+	service "rest-project/internal/services"
 )
 
 func SetupRoutes(r *gin.Engine) {
-
-	// Роуты
-	students := r.Group("api/v1/auth")
+	// Auth routes
+	authRoutes := r.Group("api/v1/auth")
 	{
-		students.POST("/login", auth.Login)
-		students.POST("/register", auth.Register)
+		authRoutes.POST("/login", auth.Login)
+		authRoutes.POST("/register", auth.Register)
 	}
 
+	// Protected routes
 	protected := r.Group("api/v1")
 	protected.Use(middleware.AuthRequired())
 	{
-		protected.GET("/me", auth.Me) // Защищённый эндпоинт
-	}
+		protected.GET("/me", auth.Me)
 
+		// Car dependencies
+		carRepo := repository.NewCarRepository(db.DB)
+		carService := service.NewCarService(carRepo)
+		carHandler := delivery.NewCarHandler(carService)
+
+		// Car routes
+		cars := protected.Group("/cars")
+		{
+			cars.GET("/", carHandler.GetAllCars)
+			cars.GET("/:id", carHandler.GetCar)
+			cars.POST("/", carHandler.CreateCar)
+			cars.PUT("/:id", carHandler.UpdateCar)
+			cars.DELETE("/:id", carHandler.DeleteCar)
+		}
+	}
 }

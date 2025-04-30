@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  my_postgres_db:
+  db:
     image: postgres:17.4-alpine
     container_name: go-postgres
     restart: always
@@ -10,27 +10,28 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DB: mydatabase
     ports:
-      - "5444:5432"
+      - "5444:5432"  # доступ к базе с хоста на порт 5444
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  my-item-service:
-    depends_on:
-      - my_postgres_db
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: 'my-item-service-iso'
-    container_name: 'my-item-service-container'
+    container_name: go-app
+    restart: on-failure
+    ports:
+      - "8888:8080" # проброс порта приложения
     environment:
-      DB_HOST: my_postgres_db
+      DB_HOST: db
       DB_PORT: 5432
       DB_USER: myuser
       DB_PASSWORD: mypassword
       DB_NAME: mydatabase
-    ports:
-      - "8888:8080"
+    depends_on:
+      - db
     volumes:
       - ./internal/db/migrations:/app/internal/db/migrations
+
 volumes:
   postgres_data:

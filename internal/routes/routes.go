@@ -11,7 +11,6 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
-	// Auth routes
 	authRoutes := r.Group("api/v1/auth")
 	{
 		authRoutes.POST("/login", auth.Login)
@@ -20,23 +19,23 @@ func SetupRoutes(r *gin.Engine) {
 
 	// Protected routes
 	protected := r.Group("api/v1")
-	protected.Use(middleware.AuthRequired())
+	protected.Use(middleware.AuthRequired("admin"))
+
 	{
 		protected.GET("/me", auth.Me)
 
-		// Car dependencies
 		carRepo := repository.NewCarRepository(db.DB)
 		carService := service.NewCarService(carRepo)
 		carHandler := delivery.NewCarHandler(carService)
 
-		// Car routes
 		cars := protected.Group("/cars")
 		{
 			cars.GET("/", carHandler.GetAllCars)
 			cars.GET("/:id", carHandler.GetCar)
-			cars.POST("/", carHandler.CreateCar)
-			cars.PUT("/:id", carHandler.UpdateCar)
-			cars.DELETE("/:id", carHandler.DeleteCar)
+
+			cars.POST("/", middleware.AuthRequired("admin"), carHandler.CreateCar)
+			cars.PUT("/:id", middleware.AuthRequired("admin"), carHandler.UpdateCar)
+			cars.DELETE("/:id", middleware.AuthRequired("admin"), carHandler.DeleteCar)
 		}
 	}
 }

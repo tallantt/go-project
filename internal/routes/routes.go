@@ -20,7 +20,8 @@ func SetupRoutes(r *gin.Engine) {
 
 	// Protected routes
 	protected := r.Group("api/v1")
-	protected.Use(middleware.AuthRequired())
+	protected.Use(middleware.AuthRequired("admin"))
+
 	{
 		protected.GET("/me", auth.Me)
 
@@ -34,9 +35,10 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			cars.GET("/", carHandler.GetAllCars)
 			cars.GET("/:id", carHandler.GetCar)
-			cars.POST("/", carHandler.CreateCar)
-			cars.PUT("/:id", carHandler.UpdateCar)
-			cars.DELETE("/:id", carHandler.DeleteCar)
+
+			cars.POST("/", middleware.AuthRequired("admin"), carHandler.CreateCar)
+			cars.PUT("/:id", middleware.AuthRequired("admin"), carHandler.UpdateCar)
+			cars.DELETE("/:id", middleware.AuthRequired("admin"), carHandler.DeleteCar)
 		}
 	}
 }

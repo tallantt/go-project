@@ -3,6 +3,7 @@ package delivery
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	_ "rest-project/internal/middleware" // Импортировать middleware
 	"rest-project/internal/models"
 	_ "rest-project/internal/services"
 	service "rest-project/internal/services"
@@ -10,7 +11,6 @@ import (
 )
 
 type CarHandler struct {
-	//service *services.CarService
 	service *service.CarService
 }
 
@@ -42,10 +42,15 @@ func (h *CarHandler) GetCar(c *gin.Context) {
 	c.JSON(http.StatusOK, car)
 }
 
-// Создание новой машины
+// Создание новой машины (требуется роль администратора)
 func (h *CarHandler) CreateCar(c *gin.Context) {
-	var carCreate models.CarEdit
+	// Проверка на роль администратора через middleware
+	if role, exists := c.Get("role"); !exists || role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
 
+	var carCreate models.CarEdit
 	if err := c.ShouldBindJSON(&carCreate); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 		return
@@ -60,8 +65,14 @@ func (h *CarHandler) CreateCar(c *gin.Context) {
 	c.JSON(http.StatusCreated, newCar)
 }
 
-// Обновление машины
+// Обновление машины (требуется роль администратора)
 func (h *CarHandler) UpdateCar(c *gin.Context) {
+	// Проверка на роль администратора через middleware
+	if role, exists := c.Get("role"); !exists || role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
@@ -83,8 +94,14 @@ func (h *CarHandler) UpdateCar(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedCar)
 }
 
-// Удаление машины
+// Удаление машины (требуется роль администратора)
 func (h *CarHandler) DeleteCar(c *gin.Context) {
+	// Проверка на роль администратора через middleware
+	if role, exists := c.Get("role"); !exists || role != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid car ID"})
